@@ -1,17 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:to_do_task_management_sqlite/Database/database_helper.dart';
-import 'package:to_do_task_management_sqlite/addTask.dart';
-import 'package:to_do_task_management_sqlite/updateDelete.dart';
-
-class Task {
-  final int _id;
-  final String _title;
-  final String _date;
-  final String _priority;
-  final String _status;
-
-  Task(this._id, this._title, this._date, this._priority, this._status);
-}
+import 'package:to_do_task_management_sqlite/models/task_model.dart';
+import 'package:to_do_task_management_sqlite/pages/add_task_page.dart';
+import 'package:to_do_task_management_sqlite/pages/task_update_delete_page.dart';
+import 'package:to_do_task_management_sqlite/service/database_helper.dart';
 
 class TaskPage extends StatefulWidget {
   const TaskPage({super.key});
@@ -58,18 +49,19 @@ class _TaskPageState extends State<TaskPage> {
               Padding(
                   padding: const EdgeInsets.symmetric(
                       vertical: 8.0, horizontal: 25.0),
-                  child: FutureBuilder(
+                  child: FutureBuilder<List<Task>>(
                     future: _getValue(),
                     builder: (BuildContext context, AsyncSnapshot snapshot) {
-                      if (snapshot.data == null) {
+                      if (!snapshot.hasData) {
                         return const CircularProgressIndicator();
                       } else {
+                        List<Task> tasks = snapshot.requireData as List<Task>;
                         return SizedBox(
                           height: 400,
                           child: ListView.builder(
                               scrollDirection: Axis.vertical,
                               shrinkWrap: true,
-                              itemCount: snapshot.data.length,
+                              itemCount: tasks.length,
                               itemBuilder: (context, index) {
                                 return Column(
                                   children: [
@@ -80,31 +72,28 @@ class _TaskPageState extends State<TaskPage> {
                                           MaterialPageRoute(
                                               builder: (context) =>
                                                   UpdateDelete(
-                                                      snapshot.data[index]._id,
+                                                      tasks[index].id,
                                                       snapshot
-                                                          .data[index]._title,
-                                                      snapshot
-                                                          .data[index]._date,
-                                                      snapshot.data[index]
-                                                          ._priority)),
+                                                          .data[index].title,
+                                                      snapshot.data[index].date,
+                                                      tasks[index].priority)),
                                         );
                                       },
-                                      title: Text(snapshot.data[index]._title,
+                                      title: Text(tasks[index].title,
                                           style: TextStyle(
                                               fontSize: 20.0,
                                               fontWeight: FontWeight.bold,
-                                              decoration: snapshot.data[index]
-                                                          ._status ==
-                                                      "0"
-                                                  ? TextDecoration.none
-                                                  : TextDecoration
-                                                      .lineThrough)),
+                                              decoration:
+                                                  tasks[index].status == "0"
+                                                      ? TextDecoration.none
+                                                      : TextDecoration
+                                                          .lineThrough)),
                                       subtitle: Text(
-                                        "${snapshot.data[index]._date} • ${snapshot.data[index]._priority}",
+                                        "${tasks[index].date} • ${tasks[index].priority}",
                                         style: TextStyle(
                                             fontSize: 16.0,
                                             decoration: snapshot
-                                                        .data[index]._status ==
+                                                        .data[index].status ==
                                                     "0"
                                                 ? TextDecoration.none
                                                 : TextDecoration.lineThrough),
@@ -112,18 +101,17 @@ class _TaskPageState extends State<TaskPage> {
                                       trailing: Checkbox(
                                         activeColor:
                                             Theme.of(context).primaryColor,
-                                        value:
-                                            snapshot.data[index]._status == "0"
-                                                ? false
-                                                : true,
+                                        value: tasks[index].status == "0"
+                                            ? false
+                                            : true,
                                         onChanged: (value) {
                                           if (value == true) {
-                                            //snapshot.data[index]._status = "1";
+                                            //tasks[index].status = "1";
                                             _updatecheckbox(
-                                                snapshot.data[index]._id, "1");
+                                                tasks[index].id, "1");
                                           } else {
                                             _updatecheckbox(
-                                                snapshot.data[index]._id, "0");
+                                                tasks[index].id, "0");
                                           }
                                         },
                                       ),
@@ -154,7 +142,7 @@ class _TaskPageState extends State<TaskPage> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => const AddTask(),
+                builder: (context) => const AddTaskPage(),
               ),
             );
           },
@@ -183,7 +171,7 @@ class _TaskPageState extends State<TaskPage> {
     setState(() {});
   }
 
-  Future<List> _getValue() async {
+  Future<List<Task>> _getValue() async {
     List<Task> data = [];
     for (var element in alltask ?? []) {
       Task task = Task(element["_id"], element["_title"], element["_date"],
