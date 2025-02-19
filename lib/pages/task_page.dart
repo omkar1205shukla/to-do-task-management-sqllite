@@ -1,17 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:to_do_task_management_sqlite/Database/database_helper.dart';
-import 'package:to_do_task_management_sqlite/addTask.dart';
-import 'package:to_do_task_management_sqlite/updateDelete.dart';
-
-class Task {
-  final int _id;
-  final String _title;
-  final String _date;
-  final String _priority;
-  final String _status;
-
-  Task(this._id, this._title, this._date, this._priority, this._status);
-}
+import 'package:to_do_task_management_sqlite/models/task_model.dart';
+import 'package:to_do_task_management_sqlite/pages/add_task_page.dart';
+import 'package:to_do_task_management_sqlite/pages/task_update_delete_page.dart';
+import 'package:to_do_task_management_sqlite/service/database_helper.dart';
 
 class TaskPage extends StatefulWidget {
   const TaskPage({super.key});
@@ -154,7 +145,7 @@ class _TaskPageState extends State<TaskPage> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => const AddTask(),
+                builder: (context) => const AddTaskPage(),
               ),
             );
           },

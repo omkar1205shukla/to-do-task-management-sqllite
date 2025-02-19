@@ -1,27 +1,22 @@
 import "package:flutter/material.dart";
 import 'package:intl/intl.dart';
-import 'package:to_do_task_management_sqlite/Database/database_helper.dart';
-import 'package:to_do_task_management_sqlite/taskpage.dart';
+import 'package:to_do_task_management_sqlite/pages/task_page.dart';
+import 'package:to_do_task_management_sqlite/service/database_helper.dart';
 
-class UpdateDelete extends StatefulWidget {
-  final int id;
-  final String date;
-  final String priority;
-  final String title;
+class AddTaskPage extends StatefulWidget {
+  const AddTaskPage({super.key});
 
-  const UpdateDelete(this.id, this.title, this.date, this.priority,
-      {super.key});
   @override
-  _UpdateDeleteState createState() => _UpdateDeleteState();
+  _AddTaskPageState createState() => _AddTaskPageState();
 }
 
-class _UpdateDeleteState extends State<UpdateDelete> {
+class _AddTaskPageState extends State<AddTaskPage> {
   final _formKey = GlobalKey<FormState>();
   String _title = "";
   DateTime dateTime = DateTime.now();
   List<String> priorities = ['Low', 'Medium', 'High'];
-  late String _priority;
-  late String _id;
+  String? _priority;
+  final String _status = "0";
 
   final TextEditingController _dateController = TextEditingController();
   final DateFormat _dateFormat = DateFormat("MMM dd,yyyy");
@@ -43,20 +38,25 @@ class _UpdateDeleteState extends State<UpdateDelete> {
                   child: Icon(Icons.arrow_back_ios_outlined,
                       color: Theme.of(context).primaryColor, size: 30.0),
                   onTap: () {
-                    Navigator.pop(context);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TaskPage(),
+                      ),
+                    );
                   },
                 ),
                 const SizedBox(height: 40.0),
                 const Text(
-                  "Update/Delete Task",
-                  style: TextStyle(fontSize: 30.0, fontWeight: FontWeight.bold),
+                  "Add Task",
+                  style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold),
                 ),
                 Form(
                     key: _formKey,
                     child: Column(
                       children: [
                         Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 30.0),
+                          padding: const EdgeInsets.symmetric(vertical: 20.0),
                           child: TextFormField(
                             decoration: InputDecoration(
                               labelText: 'Title',
@@ -73,7 +73,7 @@ class _UpdateDeleteState extends State<UpdateDelete> {
                               }
                               return null;
                             },
-                            onChanged: (value) => _title = value,
+                            onSaved: (value) => _title = value!,
                             initialValue: _title,
                           ),
                         ),
@@ -144,32 +144,14 @@ class _UpdateDeleteState extends State<UpdateDelete> {
                             borderRadius: BorderRadius.circular(30.0),
                           ),
                           child: TextButton(
-                            onPressed: _update,
+                            onPressed: _submit,
                             child: const Text(
-                              "Update",
+                              "Add",
                               style: TextStyle(
                                   color: Colors.white, fontSize: 20.0),
                             ),
                           ),
-                        ),
-
-                        Container(
-                          margin: const EdgeInsets.symmetric(vertical: 10.0),
-                          height: 60.0,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor,
-                            borderRadius: BorderRadius.circular(30.0),
-                          ),
-                          child: TextButton(
-                            onPressed: _delete,
-                            child: const Text(
-                              "Delete",
-                              style: TextStyle(
-                                  color: Colors.white, fontSize: 20.0),
-                            ),
-                          ),
-                        ),
+                        )
                       ],
                     ))
               ],
@@ -180,34 +162,10 @@ class _UpdateDeleteState extends State<UpdateDelete> {
     );
   }
 
-  //set sets to the fields
-
-  DataInput() {
-    _title = widget.title;
-    _dateController.text = widget.date;
-    _priority = widget.priority;
-    _id = widget.id.toString();
-
-    setState(() {});
-  }
-
   @override
   void initState() {
     _dateController.text = _dateFormat.format(dateTime);
     super.initState();
-
-    DataInput();
-  }
-
-  _delete() async {
-    await DatabaseHelper.instance.deleteQuery(int.parse(_id));
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const TaskPage(),
-      ),
-    );
   }
 
   _handleDatePicker() async {
@@ -218,24 +176,39 @@ class _UpdateDeleteState extends State<UpdateDelete> {
       initialDate: dateTime,
     );
 
-    if (date != null && date != dateTime) {
+    if (date != dateTime) {
       setState(() {
-        dateTime = date;
+        dateTime = date!;
       });
 
-      _dateController.text = _dateFormat.format(date);
+      _dateController.text = _dateFormat.format(date!);
     }
   }
 
-  _update() async {
-    await DatabaseHelper.instance
-        .updateQuery(int.parse(_id), _title, _dateController.text, _priority);
+  _submit() async {
+    if (_formKey.currentState != null && _formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+      print("$_title,$_priority,$dateTime");
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const TaskPage(),
-      ),
-    );
+      await DatabaseHelper.instance.insert({
+        DatabaseHelper.columntitle: _title,
+        DatabaseHelper.columndate: _dateController.text,
+        DatabaseHelper.columnpriority: _priority,
+        DatabaseHelper.columnstatus: _status,
+      });
+
+      List<Map<String, dynamic>> verifyusernames =
+          await DatabaseHelper.instance.queryAll();
+      print(verifyusernames);
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const TaskPage(),
+        ),
+      );
+    } else {
+      print("error");
+    }
   }
 }
